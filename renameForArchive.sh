@@ -5,6 +5,7 @@
 # Removes all files containing " 1" String, which is iPhone way to deal with duplicates
 function removePhantoms {
       ls -l1 *\ [1-9]\.* -R 2>/dev/null | tr \\n \\0 | xargs -0 rm
+      rm *AAE
 }
 
 # REQUIRES 1 ARGUMENT
@@ -103,14 +104,14 @@ function processJPGs {
             echo "$FILE => $FINAL_NAME"
           done
         else
-	   echo "No HEIC files found. Skipping."
+	   echo "No JPG files found. Skipping."
         fi
 }
 
 # This one is only for files that already have "jgp" suffix. No additional compression.
 function processSmallJPGs {
         # Check if there's at least one jpg
-        jpgs_PRESENT=$(ls ./*JPG 2>&1 | grep "No")
+        jpgs_PRESENT=$(ls ./IMG*jpg 2>&1 | grep "No")
         if [ -z "jpgs_PRESENT" ]; then
           for FILE in IMG*jpg; do
             renameToTimeStamp "$FILE"
@@ -120,7 +121,7 @@ function processSmallJPGs {
             echo "$FILE => $FINAL_NAME"
           done
         else
-	   echo "No HEIC files found. Skipping."
+	   echo "No small jpg files found. Skipping."
         fi
 }
 
