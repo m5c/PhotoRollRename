@@ -40,7 +40,6 @@ function extractTimeStamp {
  function renameToTimeStamp {
 
   # Figure out file ending
-  set -x
   EXTENSION=$(echo "$1" | rev | cut -d '.' -f1 | rev)
   extractTimeStamp "$1"
   #     extractHash $1
