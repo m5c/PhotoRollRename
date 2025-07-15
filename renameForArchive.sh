@@ -117,12 +117,16 @@ function processJPGs {
 # This one is only for files that already have "jgp" suffix. No additional compression.
 function processSmallJPGs {
         # Check if there's at least one jpg
-        jpgs_PRESENT=$(ls -l1 ./*j[e?]pg | grep "No")
+        jpgs_PRESENT=$(ls -l1 ./*jp[e?]g | grep "No")
         if [ -z "$jpgs_PRESENT" ]; then
           ## This loop handles spaces in file names correctly...
-          find . -type f -name "[!0-9][!0-9][!0-9][!0-9][!-]*.jp[e?]g" -print0 | while IFS= read -r -d '' FILE; do
+          find . -type f -name "[!0-9][!0-9][!0-9][!0-9][!-]*jp[e?]g" -print0 | while IFS= read -r -d '' FILE; do
             renameToTimeStamp "$FILE"
-            CONVERTED_FILE=$STAMPED_FILE
+            ## Already a conversion, no re-compression needed, but "jpeg needs to be renamed into jpg"
+            ## THERE SEEMS TO BE AN ISSUE WITH THIS LINE...
+            CONVERTED_FILE="${STAMPED_FILE/jpeg/jpg}"
+            # If already jpg extension (not jpeg) this line does nothing.
+            mv "$STAMPED_FILE" "$CONVERTED_FILE"
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
           done
