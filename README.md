@@ -13,8 +13,11 @@ Renaming script for media from iOS devices.
 
 ## Usage
 
+* Add this script to your PATH:  
+`export PATH=/wherever/you/cloned/renameForArchive:$PATH`
 * Use Image Capture to load all photos from your iOS photo-roll to your Mac.
-* Run the script
+* `cd` into directory with photoroll media
+* Call `renameForArchive`
 
 ### MISC
 

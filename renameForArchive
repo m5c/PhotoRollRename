@@ -5,28 +5,28 @@
 # Removes all files containing " 1" String, which is iPhone way to deal with duplicates
 function removePhantoms {
       ls -l1 *\ [1-9]\.* -R 2>/dev/null | tr \\n \\0 | xargs -0 rm
-      rm *AAE
+      rm *AAE 2>/dev/null
 }
 
 # REQUIRES 1 ARGUMENT
 # MUST BE CALLED ON ORIGINAL FILE (OTHERWISE CREATION TIMESTAMP FLAWED)
 function extractTimeStamp {
    # For most cases, use "DateTimeOriginal"
-   RAW_TIMESTAMP=$(exiftool -DateTimeOriginal $1)
+   RAW_TIMESTAMP=$(exiftool -DateTimeOriginal $1 2>/dev/null)
 
    # As second fallback, use "-FileModifyDate" (PNG files / screenshots)
    if [ -z "$RAW_TIMESTAMP" ]; then
-	  RAW_TIMESTAMP=$(exiftool -ModifyDate $1)
+	  RAW_TIMESTAMP=$(exiftool -ModifyDate $1 2>/dev/null)
    fi
 
    # As last fallback (avis / movs) use "-MediaCreateDate"
    if [ -z "$RAW_TIMESTAMP" ]; then
-	  RAW_TIMESTAMP=$(exiftool -MediaCreateDate $1)
+	  RAW_TIMESTAMP=$(exiftool -MediaCreateDate $1 2>/dev/null)
    fi
 
    # As last fallback (avis / movs) use "-MediaCreateDate"
    if [ -z "$RAW_TIMESTAMP" ]; then
-	  RAW_TIMESTAMP=$(exiftool -FileModifyDate $1)
+	  RAW_TIMESTAMP=$(exiftool -FileModifyDate $1 2>/dev/null)
    fi
 
    TIMESTAMP=$(echo "$RAW_TIMESTAMP" | cut -d ':' -f2- | cut -c 2-20 | sed 's/[: ]/-/g')
@@ -112,7 +112,7 @@ function processJPGs {
 function processSmallJPGs {
         # Check if there's at least one jpg
         jpgs_PRESENT=$(ls ./IMG*jpg 2>&1 | grep "No")
-        if [ -z "jpgs_PRESENT" ]; then
+        if [ -z "$jpgs_PRESENT" ]; then
           for FILE in IMG*jpg; do
             renameToTimeStamp "$FILE"
 #		        convertToJpg "$STAMPED_FILE"
