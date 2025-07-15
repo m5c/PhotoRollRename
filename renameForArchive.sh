@@ -34,7 +34,6 @@ function extractTimeStamp {
   fi
 
   TIMESTAMP=$(echo "$RAW_TIMESTAMP" | cut -d ':' -f2- | cut -c 2-20 | sed 's/[: ]/-/g')
-  echo "Timestamp: $TIMESTAMP"
 }
 
  function renameToTimeStamp {
@@ -85,12 +84,14 @@ function processHeics {
         # Check if there's at least one HEIC
         HEICS_PRESENT=$(ls ./*[hH][eE][iI][cC] 2>&1 | grep "No")
         if [ -z "$HEICS_PRESENT" ]; then
+          HEIC_AMOUNT=$(find ./*[hH][eE][iI][cC] | wc -l)
+          echo "Renaming $HEIC_AMOUNT HEICs:"
           for FILE in ./*[hH][eE][iI][cC]; do
             renameToTimeStamp "$FILE"
 		        convertToJpg "$STAMPED_FILE"
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
-          done
+          done | pv -l -s $HEIC_AMOUNT >> renamed.txt
         else
 	   echo "No HEIC files found. Skipping."
         fi
@@ -101,13 +102,15 @@ function processJPGs {
         # Check if there's at least one JPG
         JPGS_PRESENT=$(ls ./*JPG 2>&1 | grep "No")
         if [ -z "$JPGS_PRESENT" ]; then
+          JPG_AMOUNT=$(find ./*JPG | wc -l)
+          echo "Renaming $JPG_AMOUNT JPGs:"
           for FILE in *JPG; do
             renameToTimeStamp "$FILE"
             CONVERTED_FILE=$(basename $STAMPED_FILE JPG)jpg
             mv $STAMPED_FILE $CONVERTED_FILE
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
-          done
+          done | pv -l -s $JPG_AMOUNT >> renamed.txt
         else
 	   echo "No JPG files found. Skipping."
         fi
@@ -116,10 +119,12 @@ function processJPGs {
 # This one is only for files that already have "jgp" suffix. No additional compression.
 function processSmallJPGs {
         # Check if there's at least one jpg
-        jpgs_PRESENT=$(ls -l1 ./*jp[e?]g | grep "No")
-        if [ -z "$jpgs_PRESENT" ]; then
+#        jpgs_PRESENT=$(ls -l1 ./*jp[e?]g | grep "No")
+        AMOUNT_SMALL_JPGs=$(find . -type f \( -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpg" -o -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpeg" \) | wc -l)
+        if [[ ! $AMOUNT_SMALL_JPGs -eq 0 ]]; then
+          echo "Renaming $AMOUNT_SMALL_JPGs jp(e)gs:"
           ## This loop handles spaces in file names correctly...
-          find . -type f -name "[!0-9][!0-9][!0-9][!0-9][!-]*jp[e?]g" -print0 | while IFS= read -r -d '' FILE; do
+          find . -type f \( -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpg" -o -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpeg" \) -print0 | while IFS= read -r -d '' FILE; do
             renameToTimeStamp "$FILE"
             ## Already a conversion, no re-compression needed, but "jpeg needs to be renamed into jpg"
             ## THERE SEEMS TO BE AN ISSUE WITH THIS LINE...
@@ -128,23 +133,25 @@ function processSmallJPGs {
             mv "$STAMPED_FILE" "$CONVERTED_FILE"
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
-          done
+          done | pv -l -s $AMOUNT_SMALL_JPGs >> renamed.txt
         else
-	        echo "No small jpg files found. Skipping."
+	        echo "No small jp(e)g files found. Skipping."
         fi
 }
 
 function processPngs {
-        # Check if there's at least one PNG
-        PNGS_PRESENT=$(ls ./*[pP][nN][gG] 2>&1 | grep "No")
-        if [ -z "$PNGS_PRESENT" ]; then
-	  for FILE in ./*[pP][nN][gG]; do
-            renameToTimeStamp "$FILE"
-		        convertToJpg "$STAMPED_FILE"
-            appendHash "$CONVERTED_FILE"
-            echo "$FILE => $FINAL_NAME"
-		done
-        else
+    # Check if there's at least one PNG
+    PNGS_PRESENT=$(ls ./*[pP][nN][gG] 2>&1 | grep "No")
+    if [ -z "$PNGS_PRESENT" ]; then
+      PNG_AMOUNT=$(find ./*[pP][nN][gG] | wc -l)
+      echo "Renaming $PNG_AMOUNT PNGs:"
+      for FILE in ./*[pP][nN][gG]; do
+              renameToTimeStamp "$FILE"
+              convertToJpg "$STAMPED_FILE"
+              appendHash "$CONVERTED_FILE"
+              echo "$FILE => $FINAL_NAME"
+      done | pv -l -s $PNG_AMOUNT >> renamed.txt
+     else
 	   echo "No PNG files found. Skipping."
         fi
 }
@@ -153,15 +160,30 @@ function processMovs {
         # Check if there's at least one MOV
         MOVS_PRESENT=$(ls ./*[mM][oO][vV] 2>&1 | grep "No")
         if [ -z "$MOVS_PRESENT" ]; then
+          MOV_AMOUNT=$(find ./*[mM][oO][vV] | wc -l)
+          echo "Renaming $MOV_AMOUNT MOVs:"
 		      for FILE in ./*[mM][oO][vV]; do
             renameToTimeStamp "$FILE"
             compressToMp4 "$STAMPED_FILE"
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
-		      done
+		      done | pv -l -s $MOV_AMOUNT >> renamed.txt
         else
 	        echo "No MOV files found. Skipping."
         fi
+}
+
+function printStats {
+
+  if [ -f renamed.txt ]; then
+    echo "Files renamed:"
+    cat renamed.txt
+    echo "----------"
+    echo "Total: $(cat renamed.txt | wc -l)"
+    rm renamed.txt
+  else
+    echo "0 files renamed"
+  fi
 }
 
 
@@ -172,7 +194,7 @@ processPngs
 processMovs
 processJPGs # ONLY upper case jpgs, to avoid doing the same files twice
 processSmallJPGs
- # ONLY lower case jpgs starting with IMG, to avoid doing the same files twice
-#processJpegs
+printStats
+
 
 
