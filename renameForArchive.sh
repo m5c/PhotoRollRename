@@ -12,40 +12,46 @@ function removePhantoms {
 # MUST BE CALLED ON ORIGINAL FILE (OTHERWISE CREATION TIMESTAMP FLAWED)
 function extractTimeStamp {
    # For most cases, use "DateTimeOriginal"
-   RAW_TIMESTAMP=$(exiftool -DateTimeOriginal $1 2>/dev/null)
+   RAW_TIMESTAMP=$(exiftool -DateTimeOriginal "$1" 2>/dev/null)
 
    # As second fallback, use "-FileModifyDate" (PNG files / screenshots)
    if [ -z "$RAW_TIMESTAMP" ]; then
-	  RAW_TIMESTAMP=$(exiftool -ModifyDate $1 2>/dev/null)
+	  RAW_TIMESTAMP=$(exiftool -ModifyDate "$1" 2>/dev/null)
    fi
 
    # As last fallback (avis / movs) use "-MediaCreateDate"
    if [ -z "$RAW_TIMESTAMP" ]; then
-	  RAW_TIMESTAMP=$(exiftool -MediaCreateDate $1 2>/dev/null)
+	  RAW_TIMESTAMP=$(exiftool -MediaCreateDate "$1" 2>/dev/null)
    fi
 
    # As last fallback (avis / movs) use "-MediaCreateDate"
    if [ -z "$RAW_TIMESTAMP" ]; then
-	  RAW_TIMESTAMP=$(exiftool -FileModifyDate $1 2>/dev/null)
+	  RAW_TIMESTAMP=$(exiftool -FileModifyDate "$1" 2>/dev/null)
    fi
 
-   TIMESTAMP=$(echo "$RAW_TIMESTAMP" | cut -d ':' -f2- | cut -c 2-20 | sed 's/[: ]/-/g')
+  if [ -z "$RAW_TIMESTAMP" ]; then
+      RAW_TIMESTAMP=$(exiftool -DateCreated "$1" 2>/dev/null)
+  fi
+
+  TIMESTAMP=$(echo "$RAW_TIMESTAMP" | cut -d ':' -f2- | cut -c 2-20 | sed 's/[: ]/-/g')
+  echo "Timestamp: $TIMESTAMP"
 }
 
  function renameToTimeStamp {
 
   # Figure out file ending
-  EXTENSION=$(echo $1 | rev | cut -d '.' -f1 | rev)
-  extractTimeStamp $1
+  set -x
+  EXTENSION=$(echo "$1" | rev | cut -d '.' -f1 | rev)
+  extractTimeStamp "$1"
   #     extractHash $1
   if [ -z $TIMESTAMP ]; then
     echo "No timestamp, skipping renaming of $1"
-     STAMPED_FILE=$1
+     STAMPED_FILE="$1"
     return
   fi
 
   STAMPED_FILE=$TIMESTAMP.$EXTENSION
-  mv $1 $STAMPED_FILE
+  mv "$1" $STAMPED_FILE
 }
 
 function convertToJpg {
@@ -68,8 +74,8 @@ function compressToMp4 {
 
 function appendHash {
     EXTENSION="."$(echo "$1" | rev | cut -d '.' -f1 | rev)
-    BASENAME=$(basename $1 $EXTENSION)
-    HASH=$(md5sum $1 | cut -c 1-8)
+    BASENAME=$(basename "$1" "$EXTENSION")
+    HASH=$(md5sum "$1" | cut -c 1-8)
     FINAL_NAME=$BASENAME-$HASH$EXTENSION
     mv "$1" "$FINAL_NAME"
 }
@@ -78,9 +84,9 @@ function appendHash {
 
 function processHeics {
         # Check if there's at least one HEIC
-        HEICS_PRESENT=$(ls ./*HEIC 2>&1 | grep "No")
+        HEICS_PRESENT=$(ls ./*[hH][eE][iI][cC] 2>&1 | grep "No")
         if [ -z "$HEICS_PRESENT" ]; then
-          for FILE in *HEIC; do
+          for FILE in ./*[hH][eE][iI][cC]; do
             renameToTimeStamp "$FILE"
 		        convertToJpg "$STAMPED_FILE"
             appendHash "$CONVERTED_FILE"
@@ -111,25 +117,25 @@ function processJPGs {
 # This one is only for files that already have "jgp" suffix. No additional compression.
 function processSmallJPGs {
         # Check if there's at least one jpg
-        jpgs_PRESENT=$(ls ./IMG*jpg 2>&1 | grep "No")
+        jpgs_PRESENT=$(ls -l1 ./*j[e?]pg | grep "No")
         if [ -z "$jpgs_PRESENT" ]; then
-          for FILE in IMG*jpg; do
+          ## This loop handles spaces in file names correctly...
+          find . -type f -name "[!0-9][!0-9][!0-9][!0-9][!-]*.jp[e?]g" -print0 | while IFS= read -r -d '' FILE; do
             renameToTimeStamp "$FILE"
-#		        convertToJpg "$STAMPED_FILE"
             CONVERTED_FILE=$STAMPED_FILE
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
           done
         else
-	   echo "No small jpg files found. Skipping."
+	        echo "No small jpg files found. Skipping."
         fi
 }
 
 function processPngs {
         # Check if there's at least one PNG
-        PNGS_PRESENT=$(ls ./*PNG 2>&1 | grep "No")
+        PNGS_PRESENT=$(ls ./*[pP][nN][gG] 2>&1 | grep "No")
         if [ -z "$PNGS_PRESENT" ]; then
-		      for FILE in *PNG; do
+	  for FILE in ./*[pP][nN][gG]; do
             renameToTimeStamp "$FILE"
 		        convertToJpg "$STAMPED_FILE"
             appendHash "$CONVERTED_FILE"
@@ -142,9 +148,9 @@ function processPngs {
 
 function processMovs {
         # Check if there's at least one MOV
-        MOVS_PRESENT=$(ls ./*MOV 2>&1 | grep "No")
+        MOVS_PRESENT=$(ls ./*[mM][oO][vV] 2>&1 | grep "No")
         if [ -z "$MOVS_PRESENT" ]; then
-		      for FILE in *MOV; do
+		      for FILE in ./*[mM][oO][vV]; do
             renameToTimeStamp "$FILE"
             compressToMp4 "$STAMPED_FILE"
             appendHash "$CONVERTED_FILE"
