@@ -25,11 +25,12 @@ It is safe to stall and relaunch the script at any time.
 
 ## Supported files
 
-* HEIC
+* HEIC/heic
 * JPG
-* jpg
-* jpeg
+* jp(e)g
+* CR2
 * MOV
+* PNG/png
 
 
 ## Known bugs

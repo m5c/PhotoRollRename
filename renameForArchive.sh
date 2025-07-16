@@ -173,6 +173,23 @@ function processMovs {
         fi
 }
 
+function processRaws {
+        # Check if there's at least one MOV
+        RAWS_PRESENT=$(ls ./*CR2 2>&1 | grep "No")
+        if [ -z "$RAWS_PRESENT" ]; then
+          RAW_AMOUNT=$(find ./*CR2 | wc -l)
+          echo "Renaming $RAW_AMOUNTT CR2s:"
+		      for FILE in ./*CR2; do
+            renameToTimeStamp "$FILE"
+            compressToMp4 "$STAMPED_FILE"
+            appendHash "$CONVERTED_FILE"
+            echo "$FILE => $FINAL_NAME"
+		      done | pv -l -s $RAW_AMOUNT >> renamed.txt
+        else
+	        echo "No MOV files found. Skipping."
+        fi
+}
+
 function printStats {
 
   if [ -f renamed.txt ]; then
@@ -190,10 +207,11 @@ function printStats {
 # ACTUAL LOGIC
 removePhantoms
 processHeics
-processPngs
-processMovs
 processJPGs # ONLY upper case jpgs, to avoid doing the same files twice
 processSmallJPGs
+processRaws
+processMovs
+processPngs
 printStats
 
 
