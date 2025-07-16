@@ -181,12 +181,14 @@ function processRaws {
           echo "Renaming $RAW_AMOUNTT CR2s:"
 		      for FILE in ./*CR2; do
             renameToTimeStamp "$FILE"
-            compressToMp4 "$STAMPED_FILE"
+            # No compression needed for raws
+            CONVERTED_FILE="${STAMPED_FILE/CR2/cr2}"
+            mv "$STAMPED_FILE" "$CONVERTED_FILE"
             appendHash "$CONVERTED_FILE"
             echo "$FILE => $FINAL_NAME"
 		      done | pv -l -s $RAW_AMOUNT >> renamed.txt
         else
-	        echo "No MOV files found. Skipping."
+	        echo "No CR2 files found. Skipping."
         fi
 }
 
