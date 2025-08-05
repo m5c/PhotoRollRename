@@ -2,9 +2,10 @@
 
 #! /bin/bash
 
-# Removes all files containing " 1" String, which is iPhone way to deal with duplicates
+# Removes all files containing " [0-9]." String, which is iPhone way to deal with duplicates
+# Must exclude screenshots though, because screenshots contain timestamp e.g. "...at 3.13.02 PM.png"
 function removePhantoms {
-      ls -l1 *\ [1-9]\.* -R 2>/dev/null | tr \\n \\0 | xargs -0 rm
+      ls -l1 *\ [1-9]\.* 2>/dev/null | grep -v Screenshot | tr \\n \\0 | xargs -0 rm
       rm *AAE 2>/dev/null
 }
 
@@ -34,9 +35,10 @@ function extractTimeStamp {
   fi
 
   TIMESTAMP=$(echo "$RAW_TIMESTAMP" | cut -d ':' -f2- | cut -c 2-20 | sed 's/[: ]/-/g')
+  echo $TIMESTAMP
 }
 
- function renameToTimeStamp {
+function renameToTimeStamp {
 
   # Figure out file ending
   EXTENSION=$(echo "$1" | rev | cut -d '.' -f1 | rev)
@@ -49,7 +51,7 @@ function extractTimeStamp {
   fi
 
   STAMPED_FILE=$TIMESTAMP.$EXTENSION
-  mv "$1" $STAMPED_FILE
+  mv "$1" "$STAMPED_FILE"
 }
 
 function convertToJpg {
@@ -140,6 +142,7 @@ function processSmallJPGs {
 }
 
 function processPngs {
+
     # Check if there's at least one PNG
     PNGS_PRESENT=$(ls ./*[pP][nN][gG] 2>&1 | grep "No")
     if [ -z "$PNGS_PRESENT" ]; then
