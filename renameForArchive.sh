@@ -2,6 +2,20 @@
 
 #! /bin/bash
 
+
+## Helper function to verify if all runtime requirements are satisfied.
+function verifyDependency {
+
+  ## Verify jq (json parsing) command is installed
+  if ! command -v $1 >/dev/null 2>&1; then
+    echo "Error: $1 is not installed." >&2
+    echo "Install with (something like):" >&2
+    echo "  brew install $1" >&2
+    exit 1
+  fi
+}
+
+
 # Removes all files containing " [0-9]." String, which is iPhone way to deal with duplicates
 # Must exclude screenshots though, because screenshots contain timestamp e.g. "...at 3.13.02 PM.png"
 function removePhantoms {
@@ -223,6 +237,14 @@ function printStats {
     echo "0 files renamed"
   fi
 }
+
+
+# PRELIMINARY CHECKS (ALL DEPENDENCIES INSTALLED)
+## Verify all software dependencies
+DEPENDENCIES=(exiftool md5sum ffmpeg magick)
+for DEP in "${DEPENDENCIES[@]}"; do
+  verifyDependency "$DEP"
+done
 
 
 # ACTUAL LOGIC
