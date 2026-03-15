@@ -1,6 +1,6 @@
 # Photo Roll Rename
 
-Renaming script for media from iOS devices.
+Renaming script for media from iOS/Samsung devices.
 
 ## Purpose
 
@@ -8,8 +8,9 @@ Renaming script for media from iOS devices.
   * jpg
   * mp4
 * Use unique chronological naming
-  * Pre: image creation time (year down to second)
-  * Post: first 8 characters of file MD5 hash
+  * Pre: image creation time (year down to second): YYYY-MM-DD-HH-MM-SS
+  * Post: dash, then first 8 characters of file MD5 hash: XXXXXXXX
+  * Suffix: filename in lowercase: mp4, jpg, etc.
 
 ## Usage
 
@@ -17,7 +18,7 @@ Renaming script for media from iOS devices.
 `export PATH=/wherever/you/cloned/renameForArchive:$PATH`
 * Use Image Capture to load all photos from your iOS photo-roll to your Mac.
 * `cd` into directory with photoroll media
-* Call `renameForArchive`
+* Call `./renameForArchive.sh`
 
 ### MISC
 
@@ -26,13 +27,18 @@ It is safe to stall and relaunch the script at any time.
 ## Supported files
 
 * HEIC/heic
-* JPG
-* jp(e)g
+* JPG/JPEG/jpg/jpeg
+* PNG/png
 * CR2
 * MOV
-* PNG/png
+* MP4/mp4
 
+## MISC
 
-## Known bugs
+### License
 
-In some cases PNG screenshots loose their EXIF information, i.e. the information of when the image actually was created is irreversibly lost. In this case the current date is used for naming.
+[GNU GENERAL PUBLIC LICENSE](LICENSE)
+
+### Author / Pull-Requests
+
+[Maximilian Schiedermeier](mailto:schiedermeier.maximilian@uqam.ca)
