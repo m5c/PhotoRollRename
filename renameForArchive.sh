@@ -35,7 +35,6 @@ function extractTimeStamp {
   fi
 
   TIMESTAMP=$(echo "$RAW_TIMESTAMP" | cut -d ':' -f2- | cut -c 2-20 | sed 's/[: ]/-/g')
-  echo $TIMESTAMP
 }
 
 function renameToTimeStamp {
@@ -43,7 +42,6 @@ function renameToTimeStamp {
   # Figure out file ending
   EXTENSION=$(echo "$1" | rev | cut -d '.' -f1 | rev)
   extractTimeStamp "$1"
-  #     extractHash $1
   if [ -z $TIMESTAMP ]; then
     echo "No timestamp, skipping renaming of $1"
      STAMPED_FILE="$1"
@@ -69,7 +67,10 @@ function compressToMp4 {
     # Dont add globbing protection here, basename command cannot handle it.
     CONVERTED_FILE=$(basename $UNCONVERTED_FILE $EXTENSION)mp4
     ffmpeg -loglevel quiet -y -i "$UNCONVERTED_FILE" -map_metadata 0 -c copy "$CONVERTED_FILE"
-    rm "$UNCONVERTED_FILE"
+    # Only delete original file if an actual file rename took place (i.e. extension changed)
+    if [ ! "$UNCONVERTED_FILE" = "$CONVERTED_FILE" ]; then
+      rm "$UNCONVERTED_FILE"
+    fi
 }
 
 function appendHash {
@@ -122,11 +123,11 @@ function processJPGs {
 function processSmallJPGs {
         # Check if there's at least one jpg
 #        jpgs_PRESENT=$(ls -l1 ./*jp[e?]g | grep "No")
-        AMOUNT_SMALL_JPGs=$(find . -type f \( -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpg" -o -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpeg" \) | wc -l)
+        AMOUNT_SMALL_JPGs=$(find . -type f \( -iname "*.jpg" -o -iname "*.jpeg" \) ! -iname "[0-9][0-9][0-9][0-9]-*" | wc -l)
         if [[ ! $AMOUNT_SMALL_JPGs -eq 0 ]]; then
           echo "Renaming $AMOUNT_SMALL_JPGs jp(e)gs:"
           ## This loop handles spaces in file names correctly...
-          find . -type f \( -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpg" -o -iname "[!0-9][!0-9][!0-9][!0-9][!-]*.jpeg" \) -print0 | while IFS= read -r -d '' FILE; do
+          find . -type f \( -iname "*.jpg" -o -iname "*.jpeg" \) ! -iname "[0-9][0-9][0-9][0-9]-*" -print0 | while IFS= read -r -d '' FILE; do
             renameToTimeStamp "$FILE"
             ## Already a conversion, no re-compression needed, but "jpeg needs to be renamed into jpg"
             ## THERE SEEMS TO BE AN ISSUE WITH THIS LINE...
@@ -142,7 +143,6 @@ function processSmallJPGs {
 }
 
 function processPngs {
-
     # Check if there's at least one PNG
     PNGS_PRESENT=$(ls ./*[pP][nN][gG] 2>&1 | grep "No")
     if [ -z "$PNGS_PRESENT" ]; then
@@ -173,6 +173,22 @@ function processMovs {
 		      done | pv -l -s $MOV_AMOUNT >> renamed.txt
         else
 	        echo "No MOV files found. Skipping."
+        fi
+}
+
+function processMp4s {
+        # Look up how many _unrenamed_ mp4 files still linger
+        MP4_AMOUNT=$(find . ! -name "[0-9][0-9][0-9][0-9]-*" | grep -e mp4 -e MP4 | wc -l)
+        if [ $MP4_AMOUNT -ne 0 ]; then
+          echo "Renaming $MP4_AMOUNT MP4s:"
+	  for FILE in $(find . ! -name "[0-9][0-9][0-9][0-9]-*" | grep -e mp4 -e MP4); do
+            renameToTimeStamp "$FILE"
+            compressToMp4 "$STAMPED_FILE"
+            appendHash "$CONVERTED_FILE"
+            echo "$FILE => $FINAL_NAME"
+		      done | pv -l -s $MP4_AMOUNT >> renamed.txt
+        else
+	        echo "No (previously unprocessed) mp4/MP4 files found. Skipping."
         fi
 }
 
@@ -216,6 +232,7 @@ processJPGs # ONLY upper case jpgs, to avoid doing the same files twice
 processSmallJPGs
 processRaws
 processMovs
+processMp4s
 processPngs
 printStats
 
