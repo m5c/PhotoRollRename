@@ -5,8 +5,11 @@ Renaming script for media from iOS/Samsung devices.
 ## Purpose
 
 * Convert everything to standard file formats:
-  * jpg
-  * mp4
+  * HEIC/heic/JPG/JPEG/JPEG/PNG/png/CR2 -> jpg
+  * MOV/MP4 -> mp4
+* Applies same compression
+  * jpg: uses [magick](https://github.com/ImageMagick/ImageMagick) to optimize jpg compression.
+  * mp4: uses [ffmpeg](https://github.com/FFmpeg/FFmpeg) to boil movies down to a third.
 * Use unique chronological naming
   * Pre: image creation time (year down to second): YYYY-MM-DD-HH-MM-SS
   * Post: dash, then first 8 characters of file MD5 hash: XXXXXXXX
