@@ -6,7 +6,7 @@
 ## Helper function to verify if all runtime requirements are satisfied.
 function verifyDependency {
 
-  ## Verify jq (json parsing) command is installed
+  ## Verifys if command (passed as argument) is installed
   if ! command -v $1 >/dev/null 2>&1; then
     echo "Error: $1 is not installed." >&2
     echo "Install with (something like):" >&2
