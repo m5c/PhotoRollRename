@@ -80,11 +80,11 @@ function compressToMp4 {
     EXTENSION=$(echo "$UNCONVERTED_FILE" | rev | cut -d '.' -f1 | rev)
     # Dont add globbing protection here, basename command cannot handle it.
     CONVERTED_FILE=$(basename $UNCONVERTED_FILE $EXTENSION)mp4
-    ffmpeg -loglevel quiet -y -i "$UNCONVERTED_FILE" -map_metadata 0 -c copy "$CONVERTED_FILE"
-    # Only delete original file if an actual file rename took place (i.e. extension changed)
-    if [ ! "$UNCONVERTED_FILE" = "$CONVERTED_FILE" ]; then
-      rm "$UNCONVERTED_FILE"
-    fi
+
+    # A buffer file (tmp- prefix) is needed, because ffmpeg does not respect provided upper / lowercase filename extensions if base file name matches.
+    ffmpeg -loglevel quiet -y -i "$UNCONVERTED_FILE" -map_metadata 0 -c copy "tmp-$CONVERTED_FILE"
+    rm "$UNCONVERTED_FILE"
+    mv "tmp-$CONVERTED_FILE" "$CONVERTED_FILE"
 }
 
 function appendHash {
@@ -195,7 +195,7 @@ function processMp4s {
         MP4_AMOUNT=$(find . ! -name "[0-9][0-9][0-9][0-9]-*" | grep -e mp4 -e MP4 | wc -l)
         if [ $MP4_AMOUNT -ne 0 ]; then
           echo "Renaming $MP4_AMOUNT MP4s:"
-	  for FILE in $(find . ! -name "[0-9][0-9][0-9][0-9]-*" | grep -e mp4 -e MP4); do
+	        for FILE in $(find . ! -name "[0-9][0-9][0-9][0-9]-*" | grep -e mp4 -e MP4); do
             renameToTimeStamp "$FILE"
             compressToMp4 "$STAMPED_FILE"
             appendHash "$CONVERTED_FILE"
