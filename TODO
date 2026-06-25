@@ -1,0 +1,3 @@
+- Run hash-updater (cropped / rotated files have mismatched hash)
+- Figure out why some JPG files need double running to have correct appendix (jpg)
+- Figure out why movie converter does not compress as it should, use line from logfile to correct.
